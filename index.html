@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q1'26 International Sales Incentive Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Progress Bar Animation */
+        .progress-fill {
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+        }
+        
+        /* Card Hover Effects */
+        .team-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .team-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Input Styling */
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        /* Achievement Badges */
+        .badge-50 { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .badge-75 { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .badge-100 { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .badge-none { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
+        
+        /* Pulse animation for 100% */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(16, 185, 129, 0.2); }
+        }
+        .achievement-glow {
+            animation: pulse-glow 2s infinite;
+        }
+        
+        /* Currency Toggle */
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+            background: #334155;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle-switch.active {
+            background: #3b82f6;
+        }
+        .toggle-knob {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(28px);
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="text-slate-200 p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="glass rounded-2xl p-6 md:p-8 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent mb-2">
+                        Q1'26 International Incentive Tracker
+                    </h1>
+                    <p class="text-slate-400">Real-time progress monitoring for India & ROW targets</p>
+                </div>
+                <div class="flex items-center gap-4 glass px-4 py-2 rounded-full">
+                    <span class="text-sm font-medium text-slate-400">Currency:</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-slate-300">₹</span>
+                        <div class="toggle-switch" id="currencyToggle" onclick="toggleCurrency()">
+                            <div class="toggle-knob"></div>
+                        </div>
+                        <span class="text-sm font-bold text-slate-500">$</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Summary Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- India Summary -->
+            <div class="glass rounded-2xl p-6 border-l-4 border-orange-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-orange-400 mb-1">India Region</h2>
+                        <p class="text-sm text-slate-400">New Properties Onboarded</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold mono" id="indiaTotalCurrent">0</div>
+                        <div class="text-xs text-slate-500">of 36 target</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>Progress</span>
+                        <span id="indiaTotalPercent">0%</span>
+                    </div>
+                    <div class="h-3 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="indiaTotalBar" class="progress-fill h-full bg-gradient-to-r from-orange-600 to-orange-400 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="glass rounded-lg p-2">
+                        <div class="text-orange-400 font-bold">₹5,000</div>
+                        <div class="text-slate-500">50%</div>
+                    </div>
+                    <div class="glass rounded-lg p-2">
+                        <div class="text-blue-400 font-bold">₹15,000</div>
+                        <div class="text-slate-500">75%</div>
+                    </div>
+                    <div class="glass rounded-lg p-2">
+                        <div class="text-emerald-400 font-bold">₹25,000</div>
+                        <div class="text-slate-500">100%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW Summary -->
+            <div class="glass rounded-2xl p-6 border-l-4 border-blue-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-blue-400 mb-1">Rest of World</h2>
+                        <p class="text-sm text-slate-400">ACV Generated</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold mono" id="rowTotalCurrent">$0</div>
+                        <div class="text-xs text-slate-500">of $27,000 target</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>Progress</span>
+                        <span id="rowTotalPercent">0%</span>
+                    </div>
+                    <div class="h-3 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="rowTotalBar" class="progress-fill h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="glass rounded-lg p-2">
+                        <div class="text-orange-400 font-bold">₹7,500</div>
+                        <div class="text-slate-500">50%</div>
+                    </div>
+                    <div class="glass rounded-lg p-2">
+                        <div class="text-blue-400 font-bold">₹15,000</div>
+                        <div class="text-slate-500">75%</div>
+                    </div>
+                    <div class="glass rounded-lg p-2">
+                        <div class="text-emerald-400 font-bold">₹30,000</div>
+                        <div class="text-slate-500">100%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Members Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Saurav Bhadauria -->
+            <div class="team-card glass rounded-2xl p-6" id="card-saurav">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-white">
+                        SB
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-white">Saurav Bhadauria</h3>
+                        <p class="text-xs text-purple-400 font-medium">INTL Manager</p>
+                    </div>
+                </div>
+
+                <!-- India Input -->
+                <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-orange-400 font-medium">India Properties</span>
+                        <span class="text-xs text-slate-500">Target: 12</span>
+                    </div>
+                    <input type="number" id="saurav-india" min="0" max="12" value="0" 
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold mono focus:outline-none focus:border-orange-500 transition-colors"
+                           oninput="updateCalculations()">
+                    <div class="mt-2 flex justify-between text-xs">
+                        <span class="text-slate-500">Incentive:</span>
+                        <span id="saurav-india-incentive" class="font-bold text-orange-400">₹0</span>
+                    </div>
+                    <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="saurav-india-bar" class="progress-fill bg-orange-500 h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- ROW Input -->
+                <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-blue-400 font-medium">ROW ACV</span>
+                        <span class="text-xs text-slate-500">Target: $6,750</span>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-slate-500">$</span>
+                        <input type="number" id="saurav-row" min="0" value="0" step="100"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-white font-bold mono focus:outline-none focus:border-blue-500 transition-colors"
+                               oninput="updateCalculations()">
+                    </div>
+                    <div class="mt-2 flex justify-between text-xs">
+                        <span class="text-slate-500">Incentive:</span>
+                        <span id="saurav-row-incentive" class="font-bold text-blue-400">₹0</span>
+                    </div>
+                    <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="saurav-row-bar" class="progress-fill bg-blue-500 h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Total for Saurav -->
+                <div class="mt-4 pt-4 border-t border-slate-700">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-slate-300">Total Incentive</span>
+                        <span id="saurav-total" class="text-xl font-bold text-emerald-400 mono">₹0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mustafa Shaikhali -->
+            <div class="team-card glass rounded-2xl p-6" id="card-mustafa">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-xl font-bold text-white">
+                        MS
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-white">Mustafa Shaikhali</h3>
+                        <p class="text-xs text-cyan-400 font-medium">INTL Senior</p>
+                    </div>
+                </div>
+
+                <!-- India Input -->
+                <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-orange-400 font-medium">India Properties</span>
+                        <span class="text-xs text-slate-500">Target: 12</span>
+                    </div>
+                    <input type="number" id="mustafa-india" min="0" max="12" value="0"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold mono focus:outline-none focus:border-orange-500 transition-colors"
+                           oninput="updateCalculations()">
+                    <div class="mt-2 flex justify-between text-xs">
+                        <span class="text-slate-500">Incentive:</span>
+                        <span id="mustafa-india-incentive" class="font-bold text-orange-400">₹0</span>
+                    </div>
+                    <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="mustafa-india-bar" class="progress-fill bg-orange-500 h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- ROW Input -->
+                <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-blue-400 font-medium">ROW ACV</span>
+                        <span class="text-xs text-slate-500">Target: $10,125</span>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-slate-500">$</span>
+                        <input type="number" id="mustafa-row" min="0" value="0" step="100"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-white font-bold mono focus:outline-none focus:border-blue-500 transition-colors"
+                               oninput="updateCalculations()">
+                    </div>
+                    <div class="mt-2 flex justify-between text-xs">
+                        <span class="text-slate-500">Incentive:</span>
+                        <span id="mustafa-row-incentive" class="font-bold text-blue-400">₹0</span>
+                    </div>
+                    <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="mustafa-row-bar" class="progress-fill bg-blue-500 h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-700">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-slate-300">Total Incentive</span>
+                        <span id="mustafa-total" class="text-xl font-bold text-emerald-400 mono">₹0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amrita Thapar -->
+            <div class="team-card glass rounded-2xl p-6" id="card-amrita">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-xl font-bold text-white">
+                        AT
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-white">Amrita Thapar</h3>
+                        <p class="text-xs text-pink-400 font-medium">INTL Senior</p>
+                    </div>
+                </div>
+
+                <!-- India Input -->
+                <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-orange-400 font-medium">India Properties</span>
+                        <span class="text-xs text-slate-500">Target: 12</span>
+                    </div>
+                    <input type="number" id="amrita-india" min="0" max="12" value="0"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold mono focus:outline-none focus:border-orange-500 transition-colors"
+                           oninput="updateCalculations()">
+                    <div class="mt-2 flex justify-between text-xs">
+                        <span class="text-slate-500">Incentive:</span>
+                        <span id="amrita-india-incentive" class="font-bold text-orange-400">₹0</span>
+                    </div>
+                    <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="amrita-india-bar" class="progress-fill bg-orange-500 h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- ROW Input -->
+                <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-blue-400 font-medium">ROW ACV</span>
+                        <span class="text-xs text-slate-500">Target: $10,125</span>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-slate-500">$</span>
+                        <input type="number" id="amrita-row" min="0" value="0" step="100"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-white font-bold mono focus:outline-none focus:border-blue-500 transition-colors"
+                               oninput="updateCalculations()">
+                    </div>
+                    <div class="mt-2 flex justify-between text-xs">
+                        <span class="text-slate-500">Incentive:</span>
+                        <span id="amrita-row-incentive" class="font-bold text-blue-400">₹0</span>
+                    </div>
+                    <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div id="amrita-row-bar" class="progress-fill bg-blue-500 h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-700">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-slate-300">Total Incentive</span>
+                        <span id="amrita-total" class="text-xl font-bold text-emerald-400 mono">₹0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Totals & Visualization -->
+        <div class="glass rounded-2xl p-6 md:p-8 mt-8">
+            <h2 class="text-2xl font-bold mb-6 text-white">Team Performance Overview</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- India Breakdown -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-orange-400 mb-4">India Progress by Team Member</h3>
+                    <div id="india-breakdown" class="space-y-3">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- ROW Breakdown -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-blue-400 mb-4">ROW Progress by Team Member</h3>
+                    <div id="row-breakdown" class="space-y-3">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Payout Summary -->
+            <div class="mt-8 pt-6 border-t border-slate-700">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-medium text-slate-300">Total Team Incentive Payout</h3>
+                        <p class="text-sm text-slate-500">Combined India + ROW incentives</p>
+                    </div>
+                    <div class="text-3xl md:text-4xl font-bold text-emerald-400 mono" id="grand-total">
+                        ₹0
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="flex flex-wrap gap-4 justify-center mt-8">
+            <button onclick="resetAll()" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Reset All Data
+            </button>
+            <button onclick="simulateScenario('on_track')" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors">
+                Simulate: On Track (75%)
+            </button>
+            <button onclick="simulateScenario('exceed')" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors">
+                Simulate: Exceed (100%+)
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Configuration
+        const config = {
+            india: {
+                targets: { saurav: 12, mustafa: 12, amrita: 12 },
+                totalTarget: 36,
+                incentives: { 50: 5000, 75: 15000, 100: 25000 }
+            },
+            row: {
+                targets: { saurav: 6750, mustafa: 10125, amrita: 10125 },
+                totalTarget: 27000,
+                incentives: { 50: 7500, 75: 15000, 100: 30000 }
+            }
+        };
+
+        let currencyMode = 'INR'; // 'INR' or 'USD'
+
+        function toggleCurrency() {
+            currencyMode = currencyMode === 'INR' ? 'USD' : 'INR';
+            document.getElementById('currencyToggle').classList.toggle('active');
+            updateCalculations();
+        }
+
+        function calculateIncentive(percentage, type) {
+            const incentives = config[type].incentives;
+            if (percentage >= 100) return incentives[100];
+            if (percentage >= 75) return incentives[75];
+            if (percentage >= 50) return incentives[50];
+            return 0;
+        }
+
+        function getAchievementBadge(percentage) {
+            if (percentage >= 100) return { class: 'badge-100', text: '100%', glow: true };
+            if (percentage >= 75) return { class: 'badge-75', text: '75%', glow: false };
+            if (percentage >= 50) return { class: 'badge-50', text: '50%', glow: false };
+            return { class: 'badge-none', text: 'Below 50%', glow: false };
+        }
+
+        function formatCurrency(amount) {
+            if (currencyMode === 'USD') {
+                // Rough conversion for display purposes (1 USD = ~83 INR)
+                return '$' + Math.round(amount / 83).toLocaleString();
+            }
+            return '₹' + amount.toLocaleString();
+        }
+
+        function updateCalculations() {
+            const members = ['saurav', 'mustafa', 'amrita'];
+            let grandTotal = 0;
+            let indiaTotal = 0;
+            let rowTotal = 0;
+
+            members.forEach(member => {
+                // India calculations
+                const indiaVal = parseInt(document.getElementById(`${member}-india`).value) || 0;
+                const indiaTarget = config.india.targets[member];
+                const indiaPct = Math.min((indiaVal / indiaTarget) * 100, 100);
+                const indiaIncentive = calculateIncentive((indiaVal / indiaTarget) * 100, 'india');
+                
+                indiaTotal += indiaVal;
+                
+                // Update India UI
+                document.getElementById(`${member}-india-bar`).style.width = `${Math.min(indiaPct, 100)}%`;
+                document.getElementById(`${member}-india-incentive`).textContent = formatCurrency(indiaIncentive);
+                
+                // ROW calculations
+                const rowVal = parseInt(document.getElementById(`${member}-row`).value) || 0;
+                const rowTarget = config.row.targets[member];
+                const rowPct = Math.min((rowVal / rowTarget) * 100, 100);
+                const rowIncentive = calculateIncentive((rowVal / rowTarget) * 100, 'row');
+                
+                rowTotal += rowVal;
+                
+                // Update ROW UI
+                document.getElementById(`${member}-row-bar`).style.width = `${Math.min(rowPct, 100)}%`;
+                document.getElementById(`${member}-row-incentive`).textContent = formatCurrency(rowIncentive);
+                
+                // Total per member
+                const memberTotal = indiaIncentive + rowIncentive;
+                grandTotal += memberTotal;
+                document.getElementById(`${member}-total`).textContent = formatCurrency(memberTotal);
+                
+                // Card border color based on achievement
+                const card = document.getElementById(`card-${member}`);
+                const totalPct = ((indiaVal + (rowVal/1000)) / (indiaTarget + (rowTarget/1000))) * 100; // Weighted approx
+                
+                // Remove previous achievement classes
+                card.classList.remove('achievement-glow');
+                
+                // Add glow if both targets at 100%
+                if (indiaVal >= indiaTarget && rowVal >= rowTarget) {
+                    card.classList.add('achievement-glow');
+                }
+            });
+
+            // Update summary dashboards
+            const indiaTotalPct = (indiaTotal / config.india.totalTarget) * 100;
+            document.getElementById('indiaTotalCurrent').textContent = indiaTotal;
+            document.getElementById('indiaTotalPercent').textContent = `${Math.round(indiaTotalPct)}%`;
+            document.getElementById('indiaTotalBar').style.width = `${Math.min(indiaTotalPct, 100)}%`;
+            
+            const rowTotalPct = (rowTotal / config.row.totalTarget) * 100;
+            document.getElementById('rowTotalCurrent').textContent = `$${rowTotal.toLocaleString()}`;
+            document.getElementById('rowTotalPercent').textContent = `${Math.round(rowTotalPct)}%`;
+            document.getElementById('rowTotalBar').style.width = `${Math.min(rowTotalPct, 100)}%`;
+            
+            document.getElementById('grand-total').textContent = formatCurrency(grandTotal);
+            
+            updateBreakdowns(members);
+        }
+
+        function updateBreakdowns(members) {
+            // India breakdown
+            const indiaContainer = document.getElementById('india-breakdown');
+            indiaContainer.innerHTML = '';
+            
+            members.forEach(member => {
+                const val = parseInt(document.getElementById(`${member}-india`).value) || 0;
+                const target = config.india.targets[member];
+                const pct = (val / target) * 100;
+                const badge = getAchievementBadge(pct);
+                const name = member.charAt(0).toUpperCase() + member.slice(1);
+                
+                indiaContainer.innerHTML += `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full ${badge.class} flex items-center justify-center text-xs font-bold text-white ${badge.glow ? 'achievement-glow' : ''}">
+                            ${name.substring(0,2).toUpperCase()}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-slate-300">${name}</span>
+                                <span class="text-slate-400">${val}/${target}</span>
+                            </div>
+                            <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full ${badge.class} transition-all duration-500" style="width: ${Math.min(pct, 100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="text-xs font-bold ${pct >= 50 ? 'text-orange-400' : 'text-slate-600'} w-16 text-right">
+                            ${Math.round(pct)}%
+                        </div>
+                    </div>
+                `;
+            });
+
+            // ROW breakdown
+            const rowContainer = document.getElementById('row-breakdown');
+            rowContainer.innerHTML = '';
+            
+            members.forEach(member => {
+                const val = parseInt(document.getElementById(`${member}-row`).value) || 0;
+                const target = config.row.targets[member];
+                const pct = (val / target) * 100;
+                const badge = getAchievementBadge(pct);
+                const name = member.charAt(0).toUpperCase() + member.slice(1);
+                
+                rowContainer.innerHTML += `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full ${badge.class} flex items-center justify-center text-xs font-bold text-white ${badge.glow ? 'achievement-glow' : ''}">
+                            ${name.substring(0,2).toUpperCase()}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-slate-300">${name}</span>
+                                <span class="text-slate-400">$${val.toLocaleString()}</span>
+                            </div>
+                            <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full ${badge.class} transition-all duration-500" style="width: ${Math.min(pct, 100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="text-xs font-bold ${pct >= 50 ? 'text-blue-400' : 'text-slate-600'} w-16 text-right">
+                            ${Math.round(pct)}%
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function resetAll() {
+            const members = ['saurav', 'mustafa', 'amrita'];
+            members.forEach(member => {
+                document.getElementById(`${member}-india`).value = 0;
+                document.getElementById(`${member}-row`).value = 0;
+            });
+            updateCalculations();
+        }
+
+        function simulateScenario(type) {
+            resetAll();
+            setTimeout(() => {
+                if (type === 'on_track') {
+                    // 75% scenario
+                    document.getElementById('saurav-india').value = 9;
+                    document.getElementById('saurav-row').value = 5063;
+                    document.getElementById('mustafa-india').value = 9;
+                    document.getElementById('mustafa-row').value = 7594;
+                    document.getElementById('amrita-india').value = 9;
+                    document.getElementById('amrita-row').value = 7594;
+                } else if (type === 'exceed') {
+                    // 100%+ scenario
+                    document.getElementById('saurav-india').value = 12;
+                    document.getElementById('saurav-row').value = 6750;
+                    document.getElementById('mustafa-india').value = 12;
+                    document.getElementById('mustafa-row').value = 10125;
+                    document.getElementById('amrita-india').value = 12;
+                    document.getElementById('amrita-row').value = 10125;
+                }
+                updateCalculations();
+            }, 100);
+        }
+
+        // Initialize
+        updateCalculations();
+    </script>
+</body>
+</html>
