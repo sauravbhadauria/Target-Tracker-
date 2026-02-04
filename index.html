@@ -86,10 +86,44 @@
         .toggle-switch.active .toggle-knob {
             transform: translateX(28px);
         }
+
+        /* Save Status Indicator */
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+        }
+        .save-indicator.show {
+            opacity: 1;
+        }
+        .save-indicator.saved {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .save-indicator.saving {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
     </style>
-<base target="_blank">
 </head>
 <body class="text-slate-200 p-4 md:p-8">
+    <!-- Save Status Indicator -->
+    <div id="saveIndicator" class="save-indicator saved flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>Auto-saved</span>
+    </div>
+
     <div class="max-w-7xl mx-auto space-y-6">
         
         <!-- Header -->
@@ -99,7 +133,7 @@
                     <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent mb-2">
                         Q1'26 International Incentive Tracker
                     </h1>
-                    <p class="text-slate-400">Real-time progress monitoring for India & ROW targets</p>
+                    <p class="text-slate-400">Real-time progress monitoring for India & ROW targets • Auto-saves locally</p>
                 </div>
                 <div class="flex items-center gap-4 glass px-4 py-2 rounded-full">
                     <span class="text-sm font-medium text-slate-400">Currency:</span>
@@ -219,7 +253,7 @@
                     </div>
                     <input type="number" id="saurav-india" min="0" max="12" value="0" 
                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold mono focus:outline-none focus:border-orange-500 transition-colors"
-                           oninput="updateCalculations()">
+                           oninput="handleInput()">
                     <div class="mt-2 flex justify-between text-xs">
                         <span class="text-slate-500">Incentive:</span>
                         <span id="saurav-india-incentive" class="font-bold text-orange-400">₹0</span>
@@ -239,7 +273,7 @@
                         <span class="absolute left-3 top-2 text-slate-500">$</span>
                         <input type="number" id="saurav-row" min="0" value="0" step="100"
                                class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-white font-bold mono focus:outline-none focus:border-blue-500 transition-colors"
-                               oninput="updateCalculations()">
+                               oninput="handleInput()">
                     </div>
                     <div class="mt-2 flex justify-between text-xs">
                         <span class="text-slate-500">Incentive:</span>
@@ -279,7 +313,7 @@
                     </div>
                     <input type="number" id="mustafa-india" min="0" max="12" value="0"
                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold mono focus:outline-none focus:border-orange-500 transition-colors"
-                           oninput="updateCalculations()">
+                           oninput="handleInput()">
                     <div class="mt-2 flex justify-between text-xs">
                         <span class="text-slate-500">Incentive:</span>
                         <span id="mustafa-india-incentive" class="font-bold text-orange-400">₹0</span>
@@ -299,7 +333,7 @@
                         <span class="absolute left-3 top-2 text-slate-500">$</span>
                         <input type="number" id="mustafa-row" min="0" value="0" step="100"
                                class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-white font-bold mono focus:outline-none focus:border-blue-500 transition-colors"
-                               oninput="updateCalculations()">
+                               oninput="handleInput()">
                     </div>
                     <div class="mt-2 flex justify-between text-xs">
                         <span class="text-slate-500">Incentive:</span>
@@ -338,7 +372,7 @@
                     </div>
                     <input type="number" id="amrita-india" min="0" max="12" value="0"
                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold mono focus:outline-none focus:border-orange-500 transition-colors"
-                           oninput="updateCalculations()">
+                           oninput="handleInput()">
                     <div class="mt-2 flex justify-between text-xs">
                         <span class="text-slate-500">Incentive:</span>
                         <span id="amrita-india-incentive" class="font-bold text-orange-400">₹0</span>
@@ -358,7 +392,7 @@
                         <span class="absolute left-3 top-2 text-slate-500">$</span>
                         <input type="number" id="amrita-row" min="0" value="0" step="100"
                                class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-white font-bold mono focus:outline-none focus:border-blue-500 transition-colors"
-                               oninput="updateCalculations()">
+                               oninput="handleInput()">
                     </div>
                     <div class="mt-2 flex justify-between text-xs">
                         <span class="text-slate-500">Incentive:</span>
@@ -426,6 +460,10 @@
             <button onclick="simulateScenario('exceed')" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors">
                 Simulate: Exceed (100%+)
             </button>
+            <button onclick="clearSavedData()" class="px-6 py-3 bg-red-600/80 hover:bg-red-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Clear Saved Data
+            </button>
         </div>
 
     </div>
@@ -445,12 +483,152 @@
             }
         };
 
-        let currencyMode = 'INR'; // 'INR' or 'USD'
+        const STORAGE_KEY = 'q1_26_incentive_calculator_data';
+        let currencyMode = 'INR';
+        let saveTimeout;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedData();
+            updateCalculations();
+        });
+
+        function handleInput() {
+            updateCalculations();
+            debouncedSave();
+        }
+
+        function debouncedSave() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.className = 'save-indicator saving show flex items-center gap-2';
+            indicator.innerHTML = `
+                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Saving...</span>
+            `;
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                saveData();
+                indicator.className = 'save-indicator saved show flex items-center gap-2';
+                indicator.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Saved</span>
+                `;
+                
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                }, 2000);
+            }, 800);
+        }
+
+        function saveData() {
+            const members = ['saurav', 'mustafa', 'amrita'];
+            const data = {
+                timestamp: new Date().toISOString(),
+                currencyMode: currencyMode,
+                members: {}
+            };
+
+            members.forEach(member => {
+                data.members[member] = {
+                    india: document.getElementById(`${member}-india`).value,
+                    row: document.getElementById(`${member}-row`).value
+                };
+            });
+
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn('LocalStorage not available:', e);
+            }
+        }
+
+        function loadSavedData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    const members = ['saurav', 'mustafa', 'amrita'];
+                    
+                    // Restore currency mode
+                    if (data.currencyMode === 'USD') {
+                        currencyMode = 'USD';
+                        document.getElementById('currencyToggle').classList.add('active');
+                    }
+
+                    // Restore member data
+                    if (data.members) {
+                        members.forEach(member => {
+                            if (data.members[member]) {
+                                const indiaVal = data.members[member].india;
+                                const rowVal = data.members[member].row;
+                                
+                                if (indiaVal !== undefined && indiaVal !== null) {
+                                    document.getElementById(`${member}-india`).value = indiaVal;
+                                }
+                                if (rowVal !== undefined && rowVal !== null) {
+                                    document.getElementById(`${member}-row`).value = rowVal;
+                                }
+                            }
+                        });
+                    }
+
+                    // Show restored notification
+                    const indicator = document.getElementById('saveIndicator');
+                    indicator.className = 'save-indicator saved show flex items-center gap-2';
+                    indicator.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Restored last session</span>
+                    `;
+                    setTimeout(() => indicator.classList.remove('show'), 3000);
+                }
+            } catch (e) {
+                console.warn('Could not load saved data:', e);
+            }
+        }
+
+        function clearSavedData() {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+                resetAll();
+                
+                const indicator = document.getElementById('saveIndicator');
+                indicator.className = 'save-indicator saved show flex items-center gap-2';
+                indicator.style.background = 'rgba(239, 68, 68, 0.2)';
+                indicator.style.color = '#ef4444';
+                indicator.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                indicator.innerHTML = `
+                    <svg class="w-4 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Data cleared</span>
+                `;
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                    // Reset styles
+                    setTimeout(() => {
+                        indicator.style.background = '';
+                        indicator.style.color = '';
+                        indicator.style.border = '';
+                    }, 300);
+                }, 2000);
+            } catch (e) {
+                console.warn('Could not clear data:', e);
+            }
+        }
 
         function toggleCurrency() {
             currencyMode = currencyMode === 'INR' ? 'USD' : 'INR';
             document.getElementById('currencyToggle').classList.toggle('active');
             updateCalculations();
+            debouncedSave();
         }
 
         function calculateIncentive(percentage, type) {
@@ -470,7 +648,6 @@
 
         function formatCurrency(amount) {
             if (currencyMode === 'USD') {
-                // Rough conversion for display purposes (1 USD = ~83 INR)
                 return '$' + Math.round(amount / 83).toLocaleString();
             }
             return '₹' + amount.toLocaleString();
@@ -512,14 +689,9 @@
                 grandTotal += memberTotal;
                 document.getElementById(`${member}-total`).textContent = formatCurrency(memberTotal);
                 
-                // Card border color based on achievement
+                // Card effects
                 const card = document.getElementById(`card-${member}`);
-                const totalPct = ((indiaVal + (rowVal/1000)) / (indiaTarget + (rowTarget/1000))) * 100; // Weighted approx
-                
-                // Remove previous achievement classes
                 card.classList.remove('achievement-glow');
-                
-                // Add glow if both targets at 100%
                 if (indiaVal >= indiaTarget && rowVal >= rowTarget) {
                     card.classList.add('achievement-glow');
                 }
@@ -614,13 +786,13 @@
                 document.getElementById(`${member}-row`).value = 0;
             });
             updateCalculations();
+            debouncedSave();
         }
 
         function simulateScenario(type) {
             resetAll();
             setTimeout(() => {
                 if (type === 'on_track') {
-                    // 75% scenario
                     document.getElementById('saurav-india').value = 9;
                     document.getElementById('saurav-row').value = 5063;
                     document.getElementById('mustafa-india').value = 9;
@@ -628,7 +800,6 @@
                     document.getElementById('amrita-india').value = 9;
                     document.getElementById('amrita-row').value = 7594;
                 } else if (type === 'exceed') {
-                    // 100%+ scenario
                     document.getElementById('saurav-india').value = 12;
                     document.getElementById('saurav-row').value = 6750;
                     document.getElementById('mustafa-india').value = 12;
@@ -637,11 +808,9 @@
                     document.getElementById('amrita-row').value = 10125;
                 }
                 updateCalculations();
+                debouncedSave();
             }, 100);
         }
-
-        // Initialize
-        updateCalculations();
     </script>
 </body>
 </html>
